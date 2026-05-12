@@ -55,7 +55,7 @@ The scientific question to answer is : **Is resting-state heart rate variability
 
 - **Dependent variable** : HRV metrics (e.g., RMSSD).    
 - **Independent variable** : Group (BPD vs Control).     
-- **Test** : I will use a non-parametric test such as the Mann-Whitney U test, because the effectif of this group is small and unbalanced.  
+- **Test** : I will use a non-parametric test such as the Wilcoxon rank-sum test, because the effectif of this group is small and unbalanced.  
 
 
 ## **Hypothesis**
@@ -90,8 +90,8 @@ This section produces a boxplot of RMSSD by group.
 - **Normality test**
 This section applies the Shapiro-Wilk test to determine whether parametric or non-parametric testing is appropriate.
 
-- **Statistical test: Mann-Whitney U test**
-This section performs the Mann-Whitney U test to compare RMSSD between groups.
+- **Statistical test: Wilcoxon rank-sum test**
+This section performs the Wilcoxon rank-sum test to compare RMSSD between groups.
 
 - **Effect size: rank-biserial correlation**
 This section quantifies the magnitude of the group difference, independent of sample size.
@@ -178,12 +178,12 @@ if (shapiro_BPD$p.value > 0.05 & shapiro_CON$p.value > 0.05) {
   print("Both groups are normally distributed. I will use a Parametric test: t-test")
   t.test(HRV_RMSSD ~ Group, data = hrv)
 } else {
-  print("At least one group is not normally distributed. I will use a Non-parametric test: Mann-Whitney")
+  print("At least one group is not normally distributed. I will use a Non-parametric test: Wilcoxon test")
   wilcox.test(HRV_RMSSD ~ Group, data = hrv)
 }
 ```
 
-## **Statistical test : Mann-Whitney U test**
+## **Statistical test : Wilcoxon rank-sum test**
 
 ```{r, echo=TRUE, message=FALSE, warning = FALSE}
 results <-wilcox.test(HRV_RMSSD ~ Group, data = hrv)

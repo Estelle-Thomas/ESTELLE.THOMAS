@@ -111,29 +111,35 @@ Columns :
 - **Aim**: I determine whether parametric or non-parametric testing is appropriate.
 - **Input**: hrv
 - **Calculation**: I apply the Shapiro-Wilk test separately to each group
-- **Output**: If both groups pass normality (p > 0.05): t-test; otherwise: Mann-Whitney U test
+- **Output**: If both groups pass normality (p > 0.05): t-test; otherwise: Wilcoxon rank-sum test
 
-### **3.3.5. Statistical test**: Mann-Whitney U test
+### **3.3.5. Statistical test**: Wilcoxon rank-sum test
 
 - **Aim**: I compare RMSSD between BPD and healthy controls.
 - **Input**: hrv
 - **Calculation**:
 
-  $U = \sum_{i=1}^{n_1} \sum_{j=1}^{n_2} \mathbf{1}(X_i > Y_j)$
+  $W = \sum_{i=1}^{n_1} R_i$
 
-*where \(X_i\) are RMSSD values from the BPD group, \(Y_j\) are RMSSD values from the control group, and \(\mathbf{1}(\cdot)\) is the indicator function equal to 1 when \(X_i > Y_j\), and 0 otherwise.*
+*where \(R_i\) represents the rank of each observation in the first group, and \(n_1\) is the sample size of this group.*
+
+This non-parametric test was selected because RMSSD values were not normally distributed across groups.
+
 
 ### **3.3.6. Effect size**: rank-biserial correlation r
 
 - **Aim**: I quantify the magnitude of the group difference, independent of sample size.
 - **Input**: hrv
+
+The rank-biserial correlation was computed as an effect size associated with the Wilcoxon rank-sum test.
+
 - **Calculation**:
 
-  $r = \frac{W - \frac{n_1 \cdot n_2}{2}}{\frac{n_1 \cdot n_2}{2}}$
+  $r_{rb} = \frac{2W}{n_1 n_2} - 1$
 
-  *where $n_1$ and $n_2$ are the sample sizes of each group.*
+*where \(W\) is the Wilcoxon statistic, and \(n_1\) and \(n_2\) are the sample sizes of each group.*
 
-- **Output**: r value and interpretation
+- **Output**: r value and interpretation of effect size magnitude
 
 Finally, in this R project, I will obtain a table with the results of the statistical analysis (e.g., p-value, effect size, etc.) and a figure showing the comparison between the two groups.    
 
