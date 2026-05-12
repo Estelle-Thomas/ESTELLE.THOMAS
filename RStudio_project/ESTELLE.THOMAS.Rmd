@@ -1,90 +1,259 @@
 ---
-title: "A minimal notebook to analyse test data\n"
-author: "Denis MOTTET"
+title: "**R notebook to analyse the HRV in Borderline Personality Disorder**\n"
+author: "Estelle Thomas (with Copilot & Claude)"
 date: "`r format(Sys.time(), '%d %B, %Y, %H:%M')`"
 output:
   html_document:
     df_print: paged
-    code_folding: hide
+    code_folding: none
     toc: false
     number_sections: true
 ---
 
-# Objective
-The goal of this notebook is to illustrate a minimal data analysis pipeline, from a data file to a result chart.   
-We shall count the number of individuals and save a graph of their gender distribution. 
+*Estelle Thomas, Master 2 REHAB, Faculty of Medicine, Montpellier, France*
+
+# **Context scientific**
+
+## **Introduction**
+Borderline Personality Disorder (BPD) is a severe, chronic, and disabling psychiatric condition characterized by instability of self-image, emotional dysregulation, unstable interpersonal relationships, and marked impulsivity, with a prevalence estimated at 2–6% in the general population and up to 20% in psychiatric settings (Ducasse et al., 2020). 
+BPD is associated with high morbidity and mortality, partly driven by pathophysiological mechanisms involving HPA-axis hyperactivation, chronic low-grade inflammation, and autonomic nervous system dysregulation (Bozzatello et al., 2024).    
+
+Heart rate variability (HRV) serves as a non-invasive index of autonomic nervous system balance: higher resting HRV reflects greater parasympathetic (vagal) activity and better self-regulatory capacity, while reduced HRV signals sympathetic predominance and impaired emotion regulation (Thayer & Lane, 2000). 
+A meta-analysis confirmed significantly lower resting-state vagally-mediated HRV in individuals with BPD compared to healthy controls (Koenig et al., 2016), supporting the hypothesis that autonomic dysfunction underlies the emotional instability characteristic of the disorder.       
+
+What I am looking for: I compare resting-state RMSSD between individuals with BPD and healthy controls as a psychophysiological marker of autonomic dysregulation.       
 
 
-NOTE: this notebook follows the logic of the `.gitignore` file to ensure the confidentiality of personal data from human volunteers while allowing the testing of methods on pseudonymized data that we have made public.  
-- the `data` folder is not shared by Git, except for files in the `data/test_data/` subfolder.  
-- the `results` folder is not shared by Git, except for files in the `results/test_results/` subfolder.  
+## **Aim**
+The aim of this study is to examine whether resting-state heart rate variability (RMSSD) is significantly different between individuals with Borderline Personality Disorder and healthy controls.
+
+## **Method**
+Each participant was equipped with a heart rate monitor (Polar H10) for 5 minutes at rest. 
+RR intervals were recorded using the Elite HRV application. 
+RMSSD was computed from these 5-minute resting RR interval recordings using NeuroKit2 (Makowski & al., 2021), in accordance with the standards established by the Task Force of the ESC and NASPE (1996). 
+
+## **Participants**   
+- BPD patients (BPD): 32   
+- Healthy controls (CON): 23        
+
+## **Outcome measure**
+`HRV = RMSSD` (Root Mean Square of Successive Differences)  
 
 
-# Load the data
-The data file is provided in the `data/test_data/` folder.  
-The csv file contains one individual per line and several columns, with the column name appearing in the first line of the file.
+$RMSSD = \sqrt{\frac{1}{N-1} \sum_{i=1}^{N-1} (RR_{i+1} - RR_i)^2}$
 
-```{r load_data, echo=TRUE, message=FALSE, warning=FALSE}
-# Load the data from the CSV file
-students <- read.csv("data/test_data/students.csv")
-# Display the first few rows of the dataset
-head(students)
-# Display the full structure of the dataset
-# View(students)
-```
+*where $RR_i$ is the $i^{th}$ RR interval and $N$ is the total number of intervals.*
+
+<img src="../Figure/RR.jpeg" width="50%">
+
+# **Introduction**
+
+## **Objective**
+The objective of this code is to analyze the Heart Rate Variability (HRV) data collected from participants with Borderline Personality Disorder (BPD) and a control group. The analysis will include descriptive statistics, comparisons between groups, and visualizations to understand the differences in HRV metrics between the two groups.
+
+The scientific question to answer is : **Is resting-state heart rate variability (RMSSD) significantly different between individuals with Borderline Personality Disorder and healthy controls ?**
+
+- **Dependent variable** : HRV metrics (e.g., RMSSD).    
+- **Independent variable** : Group (BPD vs Control).     
+- **Test** : I will use a non-parametric test such as the Mann-Whitney U test, because the effectif of this group is small and unbalanced.  
+
+
+## **Hypothesis**
+- **H0** (null hypothesis): There is no significant difference in resting-state RMSSD between individuals with BPD and healthy controls.
+- **H1** (alternative hypothesis): Individuals with BPD exhibit significantly lower resting-state RMSSD compared to healthy controls, consistent with meta-analytic evidence (Koenig et al., 2016).
+
+# **Data organization**
+
+**File:** `../Python_project/results/HRV_results.xlsx` 
+
+**Columns:**
+
+  - `ID` : pseudonymized participant identifier.   
+  - `Group` : group of participant(BPD or CON).      
+  - `HRV_RMSSD` : RMSSD value for each participant. 
+
+
+# **Script organization**
+
+- **Data loading and preparation**
+This section loads the HRV dataset.
+
+- **Data cleaning**
+This section removes empty rows and duplicate entries.
+
+- **Descriptive statistics by group**
+This section calculates mean, standard deviation, median, IQR, and n per group.
+
+- **Visualization**
+This section produces a boxplot of RMSSD by group.
+
+- **Normality test**
+This section applies the Shapiro-Wilk test to determine whether parametric or non-parametric testing is appropriate.
+
+- **Statistical test: Mann-Whitney U test**
+This section performs the Mann-Whitney U test to compare RMSSD between groups.
+
+- **Effect size: rank-biserial correlation**
+This section quantifies the magnitude of the group difference, independent of sample size.
+
+- **Interpretation of results**
+This section prints an interpretation of the statistical output.
 
 
 
+# **R code**
 
-# Count the number of students
-```{r count_students, echo=FALSE, message=FALSE, warning=FALSE}
-# Count the number of students in the dataset
-num_students <- nrow(students)
+## **Data loading and preparation**
+```{r, echo=TRUE, message=FALSE, warning = FALSE, results='hide'}
 
-# Print the number of students in a nice sentence 
-cat("The number of students in the dataset is:", num_students, "\n")
-``` 
+# Install necessary libraries
+# Comment lines if packages are already installed, please
+#install.packages("readxl") # read the excel file
+#install.packages("dplyr") # manipulate data frames
+#install.packages("ggplot2") # for visualization
 
-# Make a gender chart of students
-
-```{r plot_gender, echo=TRUE, message=FALSE, warning=FALSE}
-# Count males and females
-num_male = nrow(students[students$Gender == "M", ])
-num_female = nrow(students[students$Gender == "F", ])
-  
-# Save the counts in a data frame for plotting
-gender_df <- data.frame(
-  gender = c("Male", "Female"),
-  count = c(num_male, num_female)
-)
-
-# Add percentage and label for chart
-gender_df$percent <- round(gender_df$count / sum(gender_df$count) * 100, 1)
-gender_df$label <- paste0( gender_df$percent, "%")
-
-# Load ggplot2 for plotting
+# load necessary libraries
+library (readxl)
+library(dplyr)
 library(ggplot2)
 
-ggplot(gender_df, aes(x = gender, y = count, fill = gender)) +
-  geom_bar( stat = "identity") +
-  theme(legend.position = "none") +
-  geom_text(aes(label = label), position = position_stack(vjust = 0.5)) +
-  labs(title = "Gender Distribution")
+# load dataset
+hrv <- read_excel("../Python_project/results/HRV_results.xlsx")
+
+```
+
+## **Cleaning and preparing data**
+```{r, echo=TRUE, message=FALSE, warning = FALSE}
+
+# Suppress the empty line
+hrv <- hrv %>%
+  filter(!is.na(ID)) # Remove rows where ID is NA
+
+# Suppress the dobble in hrv dataset (same ID and same group)
+hrv <- hrv %>% distinct(ID, Group, .keep_all = TRUE)
+
+head(hrv)
+```
+
+
+## **Descriptive statistics by groupe**
+```{r, echo=TRUE, message=FALSE, warning = FALSE}
+hrv %>%
+  group_by(Group) %>%
+  summarise(
+    mean_RMSSD = mean(HRV_RMSSD, na.rm = TRUE),
+    sd_RMSSD = sd(HRV_RMSSD, na.rm = TRUE),
+    median_RMSSD = median(HRV_RMSSD, na.rm = TRUE),
+    IQR_RMSSD = IQR(HRV_RMSSD, na.rm = TRUE),
+    n = n()
+  )
+
+```
+## **Visualization**
+```{r, echo=TRUE, message=FALSE, warning = FALSE}
+
+# Boxplot HRV (RMSSD) by Group
+ggplot(hrv, aes (x= Group, y= HRV_RMSSD, fill = Group)) +
+  geom_boxplot(outlier.shape = 21, outlier.size = 2, alpha = 0.7) +
+  labs(title = "Boxplot of RMSSD by Group",
+       x = "Group",
+       y = "RMSSD (ms)",
+       color = "Group"
+       )+
+  theme_minimal()
+
+ggsave("results/boxplot_RMSSD_by_Group.png", width = 6, height = 4, dpi = 300)
+```
+
+  
+## **Normality test**
+```{r, echo=TRUE, message=FALSE, warning = FALSE}
+# Normality test for RMSSD in each group
+# Shapiro-Wilk test per group
+
+shapiro_BPD<-shapiro.test(hrv$HRV_RMSSD[hrv$Group == "BPD"])
+shapiro_CON<-shapiro.test(hrv$HRV_RMSSD[hrv$Group == "CON"])
+
+if (shapiro_BPD$p.value > 0.05 & shapiro_CON$p.value > 0.05) {
+  print("Both groups are normally distributed. I will use a Parametric test: t-test")
+  t.test(HRV_RMSSD ~ Group, data = hrv)
+} else {
+  print("At least one group is not normally distributed. I will use a Non-parametric test: Mann-Whitney")
+  wilcox.test(HRV_RMSSD ~ Group, data = hrv)
+}
+```
+
+## **Statistical test : Mann-Whitney U test**
+
+```{r, echo=TRUE, message=FALSE, warning = FALSE}
+results <-wilcox.test(HRV_RMSSD ~ Group, data = hrv)
+print(results)
+
+```
+
+## **Effect size: rank-biserial correlation**
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Rank-biserial correlation r (effect size for Mann-Whitney)
+# Interpretation: |r| < 0.3 = small, 0.3–0.5 = moderate, > 0.5 = large
+n_BPD <- sum(hrv$Group == "BPD")
+n_CON <- sum(hrv$Group == "CON")
+r <- (results$statistic - (n_BPD * n_CON / 2)) / (n_BPD * n_CON / 2)
+print(paste("Rank-biserial r =", round(r, 3)))
+
+```
+
+## **Interpretation of results**
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+
+if (results$p.value < 0.05) {
+  print(paste0(
+    "The difference in resting-state RMSSD between BPD and CON groups is statistically significant ",
+    "(W = ", results$statistic, ", p = ", round(results$p.value, 3), ")."
+  ))
+} else {
+  print(paste0(
+    "The difference in resting-state RMSSD between BPD and CON groups is not statistically significant ",
+    "(W = ", results$statistic, ", p = ", round(results$p.value, 3), ")."
+  ))
+}
 
 ```
 
 
-# Save the gender chart in the results folder
-
-The results file is saved in the `results/test_results/` folder. 
-
-```{r save_plot, echo=TRUE, message=FALSE, warning=FALSE}
-# save the gender distribution plot in the results folder
-fname <- "gender_distribution_plot.png"
-fpath <- "results/test_results"
-ggsave(filename = fname, path = fpath, units = "cm", width = 10, heigh = 5, scale = 1.5 )
-
-``` 
 
 
+
+# **Discussion**
+In this study, I compared resting-state RMSSD between individuals with Borderline Personality Disorder and healthy controls in order to explore autonomic nervous system functioning in BPD.    
+
+- The results showed **significantly lower RMSSD values in the BPD group compared to healthy controls (W = 246, p = 0.037)**, suggesting reduced parasympathetic activity in individuals with BPD. 
+- The rank-biserial correlation indicated a **moderate effect size (r = -0.332)**, supporting the presence of a meaningful group difference.    
+
+These **findings are consistent with previous literature reporting reduced vagally mediated heart rate variability in BPD populations** (Koenig et al., 2016). Reduced RMSSD may reflect alterations in autonomic regulation that contribute to emotional dysregulation and impulsivity commonly observed in BPD.   
+
+Although the sample size remains moderate and causal interpretations cannot be made, this study supports the relevance of HRV, and particularly RMSSD, as a potential psychophysiological marker associated with BPD.
+
+
+
+
+
+
+# **References**
+
+Bozzatello, P., Marin, G., Gabriele, G., Brasso, C., Rocca, P., & Bellino, S. (2024). Metabolic dysfunctions, dysregulation of the autonomic nervous system, and echocardiographic parameters in borderline personality disorder: A narrative review. *International Journal of Molecular Sciences, 25*(22), 12286.
+
+Ducasse, D., Lopez-Castroman, J., Dassa, D., Brand-Arpon, V., Dupuy-Maurin, K., Lacourt, L., & Olié, E. (2020). Exploring the boundaries between borderline personality disorder and suicidal behavior disorder. *European Archives of Psychiatry and Clinical Neuroscience, 270*, 959–967.
+
+Koenig, J., Kemp, A. H., Feeling, N. R., Thayer, J. F., & Kaess, M. (2016). Resting state vagal tone in borderline personality disorder: A meta-analysis. *Progress in Neuro-Psychopharmacology and Biological Psychiatry, 64*, 18–26.
+
+Makowski, D., Ben-Shachar, M. S., Pham, A. T., Lau, C., Brammer, M. J., & Chen, S. H. A. (2021). NeuroKit2: A Python toolbox for neurophysiological signal processing. *Behavior Research Methods, 53*, 1689–1696.
+
+Task Force of the European Society of Cardiology and the North American Society of Pacing and Electrophysiology. (1996). Heart rate variability: Standards of measurement, physiological interpretation, and clinical use. *Circulation, 93*(5), 1043–1065.
+
+Thayer, J. F., & Lane, R. D. (2000). A model of neurovisceral integration in emotion regulation and dysregulation. *Journal of Affective Disorders, 61*(3), 201–216.
+
+Pham, T. and al. (2021). Heart Rate Variability in Psychology: A Review of HRV Indices and an Analysis Tool for the Meta-Analysis of Heart Rate Variability in Sleep and Memory. Sensors, 21(12), 3998. https://doi.org/10.3390/s21123998
 
